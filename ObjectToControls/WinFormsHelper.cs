@@ -8,6 +8,7 @@ using System.Collections;
 
 namespace ObjectToControls
 {
+    //Created by Konstantin Bobrovskii
     public static class WinFormsHelper
     {
         static Dictionary<string, Type[]> TypeByName;
@@ -23,31 +24,39 @@ namespace ObjectToControls
             TypeByName["primitive"] = new Type[] { typeof(bool), typeof(char), typeof(string), typeof(int), typeof(double), typeof(long), typeof(short), typeof(decimal) };
         }
 
-        public static Panel ObjectToControls(object obj, Point top_left, Size size, int margin)
+        public static Panel ObjectToControls(object obj, Size size, int margin)
         {
+            Point top_left = new Point(5, 5);
+
             Panel result = new Panel();
             result.AutoScroll = true;
 
             var type = obj.GetType();
 
-            foreach (PropertyInfo field in type.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+            var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+
+            var primitives_count = properties.Where((property)=>TypeByName["primitive"].Contains(property.PropertyType)).Count();
+            var arrays_count = properties.Where((property) => typeof(IEnumerable).IsAssignableFrom(property.PropertyType)).Count();
+
+            var elements_count = primitives_count + arrays_count;
+
+            foreach (PropertyInfo property in properties)
             {
                 
 
-                if (TypeByName["string"].Contains(field.PropertyType))
+                if (TypeByName["string"].Contains(property.PropertyType))
                 {
                     Action<Label, TextBox> act = (label, textbox) =>
                     {
+                        label.Text = property.Name;
+                        label.Name = property.Name + "_" + label.GetType();
 
-                        label.Text = field.Name;
-                        label.Name = field.Name + "_" + label.GetType();
-
-                        textbox.Enabled = field.SetMethod == null ? false : field.SetMethod.IsPublic;
-                        Binding binding = new Binding("Text", obj, field.Name, true, DataSourceUpdateMode.OnPropertyChanged);
+                        textbox.Enabled = property.SetMethod == null ? false : property.SetMethod.IsPublic;
+                        Binding binding = new Binding("Text", obj, property.Name, true, DataSourceUpdateMode.OnPropertyChanged);
                         binding.FormattingEnabled = true;
                         textbox.DataBindings.Add(binding);
 
-                        textbox.Name = field.Name + "_" + textbox.GetType();
+                        textbox.Name = property.Name + "_" + textbox.GetType();
 
                     };
                     var temp = CreateTuple<Label, TextBox>(top_left, size, margin, act);
@@ -55,17 +64,17 @@ namespace ObjectToControls
                     result.Controls.Add(temp.Item2);
                 }
 
-                else if (TypeByName["number"].Contains(field.PropertyType))
+                else if (TypeByName["number"].Contains(property.PropertyType))
                 {
                     Action<Label, NumericUpDown> act = (label, numeric) =>
                     {
-                        label.Name = field.Name + "_" + label.GetType();
-                        label.Text = field.Name;
+                        label.Name = property.Name + "_" + label.GetType();
+                        label.Text = property.Name;
 
-                        numeric.Name = field.Name + "_" + numeric.GetType();
-                        numeric.Enabled = field.SetMethod==null ? false: field.SetMethod.IsPublic ;
+                        numeric.Name = property.Name + "_" + numeric.GetType();
+                        numeric.Enabled = property.SetMethod==null ? false: property.SetMethod.IsPublic ;
 
-                        var temp_ = field.GetValue(obj).ToString();
+                        var temp_ = property.GetValue(obj).ToString();
 
                         if (temp_.Contains('.'))
                             numeric.DecimalPlaces = temp_.Length - temp_.IndexOf('.') - 1;
@@ -75,7 +84,7 @@ namespace ObjectToControls
 
 
 
-                        Binding binding = new Binding("Value", obj, field.Name, true, DataSourceUpdateMode.OnPropertyChanged);
+                        Binding binding = new Binding("Value", obj, property.Name, true, DataSourceUpdateMode.OnPropertyChanged);
                         binding.FormattingEnabled = true;
                         numeric.DataBindings.Add(binding);
 
@@ -85,17 +94,17 @@ namespace ObjectToControls
                     result.Controls.Add(temp.Item2);
                 }
 
-                else if (TypeByName["bool"].Contains(field.PropertyType))
+                else if (TypeByName["bool"].Contains(property.PropertyType))
                 {
                     Action<Label, CheckBox> act = (label, checkBox) =>
                     {
-                        label.Name = field.Name + "_" + label.GetType();
-                        label.Text = field.Name;
+                        label.Name = property.Name + "_" + label.GetType();
+                        label.Text = property.Name;
 
-                        checkBox.Name = field.Name + "_" + checkBox.GetType();
-                        checkBox.Enabled = field.SetMethod == null ? false : field.SetMethod.IsPublic;
+                        checkBox.Name = property.Name + "_" + checkBox.GetType();
+                        checkBox.Enabled = property.SetMethod == null ? false : property.SetMethod.IsPublic;
 
-                        Binding binding = new Binding("Checked", obj, field.Name, true, DataSourceUpdateMode.OnPropertyChanged);
+                        Binding binding = new Binding("Checked", obj, property.Name, true, DataSourceUpdateMode.OnPropertyChanged);
                         binding.FormattingEnabled = true;
                         checkBox.DataBindings.Add(binding);
 
@@ -105,16 +114,23 @@ namespace ObjectToControls
                     result.Controls.Add(temp.Item2);
                 }
 
-                else if (typeof(IEnumerable).IsAssignableFrom(field.PropertyType))
+                else if (typeof(IEnumerable).IsAssignableFrom(property.PropertyType))
                 {
-                    
+                    const int labelHeight = 40;
 
-                    GroupBox pa = new GroupBox();
-                    pa.Text = field.Name;
-                    pa.Location = top_left;
-                    pa.AutoSize = true;
-                    pa.Enabled = false;
-                    var arr = ((IEnumerable)field.GetValue(obj)).GetEnumerator();
+                    GroupBox box = new GroupBox();
+                    var pan = new Panel();
+                    box.Controls.Add(pan);
+                    box.Size = new Size(size.Width * 2 + margin, (labelHeight + margin) * 10);
+                    box.Text = property.Name;
+                    box.Location = top_left;
+                   
+                    pan.AutoScroll = true;
+                    pan.Dock = DockStyle.Fill;
+
+                    var localPoint = new Point(0, 0);
+
+                    var arr = ((IEnumerable)property.GetValue(obj)).GetEnumerator();
                     var i = 0;
                     while (arr.MoveNext())
                     {
@@ -124,34 +140,58 @@ namespace ObjectToControls
 
                             Action<Label, TextBox> act = (label, textBox) =>
                             {
-                                label.Name = field.Name + "_" + label.GetType();
+                                label.Name = property.Name + "_" + label.GetType();
                                 label.Text = i++.ToString();
-
-                                textBox.Name = field.Name + "_" + textBox.GetType();
+                                label.AutoSize = true;
+                                label.Width = label.PreferredWidth;
+                                textBox.Name = property.Name + "_" + textBox.GetType();
                                 textBox.Enabled = false;
                                 textBox.Text = item.ToString();
+                                textBox.Location = new Point(label.Location.X + label.Width + 5, textBox.Location.Y);
 
-                                //MessageBox.Show(label.Location.ToString());
-                                //MessageBox.Show(label.Size.ToString());
+
 
                             };
-                            var temp = CreateTuple<Label, TextBox>(top_left, size, margin, act);
-                            pa.Controls.Add(temp.Item1);
-                            pa.Controls.Add(temp.Item2);
+                            var temp = CreateTuple<Label, TextBox>(localPoint, size, margin, act);
+                            pan.Controls.Add(temp.Item1);
+                            pan.Controls.Add(temp.Item2);
+
+                            
                         }
 
-                        top_left = new Point(top_left.X, top_left.Y + size.Height + margin);
+                        localPoint = new Point(localPoint.X, localPoint.Y + size.Height + margin);
                     }
 
-                    MessageBox.Show(pa.Controls.Count.ToString());
-                    result.Controls.Add(pa);
+
+                    result.Controls.Add(box);
+
+                    top_left = new Point(top_left.X, box.Location.Y + box.Height + margin);
                 }
 
-                else if (!TypeByName["primitive"].Contains(field.PropertyType))
+                else if (!TypeByName["primitive"].Contains(property.PropertyType))
                 {
-                    var value = field.GetValue(obj);
+                    GroupBox box = new GroupBox();
 
-                    var recurs = ObjectToControls(value, top_left, size, margin);
+                    
+                    box.Size = new Size(size.Width * 2 + margin, (40 + margin) * 10);
+                    box.Text = property.Name;
+                    box.Location = top_left;
+
+
+
+                    var value = property.GetValue(obj);
+
+                    var recurs = ObjectToControls(value, size, margin);
+
+                    
+
+                    box.Controls.Add(recurs);
+
+                    recurs.AutoScroll = true;
+                    recurs.Dock = DockStyle.Fill;
+
+                    result.Controls.Add(box);
+
                 }
 
 

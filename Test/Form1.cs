@@ -18,9 +18,10 @@ namespace TypeToForm
         {
             InitializeComponent();
 
-            var result = WinFormsHelper.ObjectToControls(b, new Point(10, 10), new Size(100, 40), 20);
-           
-                this.Controls.Add(result);
+            var result = WinFormsHelper.ObjectToControls(b, new Size(100, 40), 20);
+            result.Location = new Point(300, 100);
+            result.Size = new Size(300, 600);
+            this.Controls.Add(result);
             
            // Timer t = new Timer();
             //t.Tick += (s, a) => ((HardBass)b).Name = Guid.NewGuid().ToString();
@@ -60,8 +61,12 @@ namespace TypeToForm
             {
                 SomeList.Add(Guid.NewGuid().ToString());
             }
+
+            CoolName = new MyClass();
+
         }
 
+        public MyClass CoolName { get; set; } 
         public override string ToString()
         {
             return $"Bass:{Bass} \n\r Volume:{Volume} \n\r Name:{Name} \n\r On:{On} \n\r Herz:{Herz} \n\r";
@@ -74,6 +79,9 @@ namespace TypeToForm
 
         public MyClass()
         {
+            MyAutoImplementedProperty = new Random().Next();
+            MyProperty = Guid.NewGuid().ToString();
+            SomeSHitField = 54;
         }
 
         public void MyMethod(int parameter1, string parameter2)
@@ -84,14 +92,16 @@ namespace TypeToForm
 
         public int MyAutoImplementedProperty { get; set; }
 
-        private int myPropertyVar;
+        private string myPropertyVar;
 
-        public int MyProperty
+        public string MyProperty
         {
             get { return myPropertyVar; }
             set { myPropertyVar = value; }
         }
 
+        private int SomeSHitField;
+        private int SomeSHitProper { get; set; }
 
     }
 }

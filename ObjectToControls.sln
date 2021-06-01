@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.30804.86
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectToControls", "ObjectToControls\ObjectToControls.csproj", "{E1E46DCC-8BF5-4C66-A302-2D534DA2C944}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "TypeToForm\Test.csproj", "{E2B4C5F4-D42E-4CC2-BF81-95922C7A6E37}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{E2B4C5F4-D42E-4CC2-BF81-95922C7A6E37}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
