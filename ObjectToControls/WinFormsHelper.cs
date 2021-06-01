@@ -35,14 +35,14 @@ namespace ObjectToControls
 
             var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
 
-            var primitives_count = properties.Where((property)=>TypeByName["primitive"].Contains(property.PropertyType)).Count();
+            var primitives_count = properties.Where((property) => TypeByName["primitive"].Contains(property.PropertyType)).Count();
             var arrays_count = properties.Where((property) => typeof(IEnumerable).IsAssignableFrom(property.PropertyType)).Count();
 
             var elements_count = primitives_count + arrays_count;
 
             foreach (PropertyInfo property in properties)
             {
-                
+
 
                 if (TypeByName["string"].Contains(property.PropertyType))
                 {
@@ -72,7 +72,7 @@ namespace ObjectToControls
                         label.Text = property.Name;
 
                         numeric.Name = property.Name + "_" + numeric.GetType();
-                        numeric.Enabled = property.SetMethod==null ? false: property.SetMethod.IsPublic ;
+                        numeric.Enabled = property.SetMethod == null ? false : property.SetMethod.IsPublic;
 
                         var temp_ = property.GetValue(obj).ToString();
 
@@ -124,7 +124,7 @@ namespace ObjectToControls
                     box.Size = new Size(size.Width * 2 + margin, (labelHeight + margin) * 10);
                     box.Text = property.Name;
                     box.Location = top_left;
-                   
+
                     pan.AutoScroll = true;
                     pan.Dock = DockStyle.Fill;
 
@@ -156,7 +156,7 @@ namespace ObjectToControls
                             pan.Controls.Add(temp.Item1);
                             pan.Controls.Add(temp.Item2);
 
-                            
+
                         }
 
                         localPoint = new Point(localPoint.X, localPoint.Y + size.Height + margin);
@@ -172,7 +172,7 @@ namespace ObjectToControls
                 {
                     GroupBox box = new GroupBox();
 
-                    
+
                     box.Size = new Size(size.Width * 2 + margin, (40 + margin) * 10);
                     box.Text = property.Name;
                     box.Location = top_left;
@@ -183,15 +183,21 @@ namespace ObjectToControls
 
                     var recurs = ObjectToControls(value, size, margin);
 
-                    
+
 
                     box.Controls.Add(recurs);
+
+                   
 
                     recurs.AutoScroll = true;
                     recurs.Dock = DockStyle.Fill;
 
                     result.Controls.Add(box);
 
+                    if(box.Height> recurs.PreferredSize.Height)
+                    {
+                        box.Height = recurs.PreferredSize.Height+70;
+                    }
                 }
 
 
@@ -203,6 +209,34 @@ namespace ObjectToControls
         }
 
 
+        public static Panel DrawGrid<T>(int columns, int rows, Size size, Action<T> action) where T : Control, new()
+        {
+
+
+            var result = new Panel();
+
+            result.Size = new Size((columns + 1) * size.Width, (rows + 1) * size.Height);
+
+            var p = new Point(1, 1);
+
+            for (int row = 0; row < rows; row++)
+            {
+                for (int column = 0; column < columns; column++)
+                {
+
+                    var temp = new T();
+                    temp.Size = size;
+                    temp.Location = p;
+                    temp.Tag = new int[] { column, row };
+                    action(temp);
+                    result.Controls.Add(temp);
+                    p = new Point(p.X + temp.Width + 1, p.Y);
+                }
+                p = new Point(1, p.Y+size.Height+1);
+            }
+
+            return result;
+        }
 
         public static (T, T1) CreateTuple<T, T1>(Point top_left, Size size, int margin, Action<T, T1> act = null) where T : Control, new() where T1 : Control, new()
         {

@@ -19,9 +19,30 @@ namespace TypeToForm
             InitializeComponent();
 
             var result = WinFormsHelper.ObjectToControls(b, new Size(100, 40), 20);
-            result.Location = new Point(300, 100);
+            result.Location = new Point(100, 100);
             result.Size = new Size(300, 600);
             this.Controls.Add(result);
+
+            bool i = false;
+
+            var grid = WinFormsHelper.DrawGrid<Button>(5, 5, new Size(100, 100), (button) =>
+            {
+                i = !i;
+                bool localI = i;
+                button.Click += (o, a) => {
+                   
+                    if (localI)
+                        button.BackColor = Color.Red;
+                    else
+                        button.BackColor = Color.Blue;
+                };
+                var tag = (int[])button.Tag;
+                button.Text = "Column: " + tag[0] + "\n\r\t Row:" + tag[1];
+            });
+
+            grid.Location = new Point(500, 200);
+
+            Controls.Add(grid);
             
            // Timer t = new Timer();
             //t.Tick += (s, a) => ((HardBass)b).Name = Guid.NewGuid().ToString();
@@ -77,8 +98,20 @@ namespace TypeToForm
     {
         public string myField = string.Empty;
 
+        public int Bass { get; set; }
+        public string Name { get; set; }
+        public int Volume { get; private set; }
+        public bool On { get; set; }
+        public double Herz { get; set; }
+
         public MyClass()
         {
+            Bass = new Random().Next(10, 100);
+            Volume = new Random().Next(0, 100);
+            Name = Guid.NewGuid().ToString();
+            Herz = new Random().NextDouble();
+            On = new Random().Next(2) == 0;
+
             MyAutoImplementedProperty = new Random().Next();
             MyProperty = Guid.NewGuid().ToString();
             SomeSHitField = 54;
